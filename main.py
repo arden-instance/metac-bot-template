@@ -678,17 +678,26 @@ if __name__ == "__main__":
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
         extra_metadata_in_explanation=True,
-        # llms={
-        #     "default": GeneralLlm(
-        #         model="openrouter/openai/gpt-4o",
-        #         temperature=0.3,
-        #         timeout=40,
-        #         allowed_tries=2,
-        #     ),
-        #     "summarizer": "openai/gpt-4o-mini",
-        #     "researcher": "asknews/news-summaries",
-        #     "parser": "openai/gpt-4o-mini",
-        # },
+        # Pinned to OpenRouter free-tier models (OPENROUTER_API_KEY secret).
+        # No AskNews creds -> researcher is an LLM (no web search yet); acceptable
+        # for a first working pipeline. gpt-4o-search-preview needs a special
+        # entitlement the Metaculus proxy does not grant, so avoid it entirely.
+        llms={
+            "default": GeneralLlm(
+                model="openrouter/deepseek/deepseek-chat-v3.1:free",
+                temperature=0.3,
+                timeout=90,
+                allowed_tries=3,
+            ),
+            "summarizer": "openrouter/deepseek/deepseek-chat-v3.1:free",
+            "researcher": GeneralLlm(
+                model="openrouter/deepseek/deepseek-chat-v3.1:free",
+                temperature=0.1,
+                timeout=90,
+                allowed_tries=3,
+            ),
+            "parser": "openrouter/deepseek/deepseek-chat-v3.1:free",
+        },
     )
 
     # Per-mode tournament URL shown in the summary banner footer. These
