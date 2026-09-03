@@ -670,9 +670,17 @@ if __name__ == "__main__":
     # Configure the bot. The `llms=` block below is commented out to use
     # whichever default models forecasting-tools picks based on your env vars;
     # uncomment and edit to pin specific models.
+    #
+    # deepseek-chat-v3.1:free was retired from OpenRouter's free tier
+    # (cycle 122: proxy now 404s it, pointing to the paid slug). Repinned to
+    # nvidia/nemotron-3-super-120b-a12b:free — confirmed live on the free
+    # tier, MoE 120B/12B-active, coherent calibrated reasoning in probes.
+    _OR_MODEL = "openrouter/nvidia/nemotron-3-super-120b-a12b:free"
     template_bot = SummerTemplateBot2026(
         research_reports_per_question=1,
-        predictions_per_research_report=5,
+        # 1 (not 5) to stay under OpenRouter free tier's ~50 req/day cap
+        # (<$10 lifetime credit). Raise once credits are topped up.
+        predictions_per_research_report=1,
         use_research_summary_to_forecast=False,
         publish_reports_to_metaculus=publish_to_metaculus,
         folder_to_save_reports_to=None,
@@ -684,19 +692,19 @@ if __name__ == "__main__":
         # entitlement the Metaculus proxy does not grant, so avoid it entirely.
         llms={
             "default": GeneralLlm(
-                model="openrouter/deepseek/deepseek-chat-v3.1:free",
+                model=_OR_MODEL,
                 temperature=0.3,
                 timeout=90,
                 allowed_tries=3,
             ),
-            "summarizer": "openrouter/deepseek/deepseek-chat-v3.1:free",
+            "summarizer": _OR_MODEL,
             "researcher": GeneralLlm(
-                model="openrouter/deepseek/deepseek-chat-v3.1:free",
+                model=_OR_MODEL,
                 temperature=0.1,
                 timeout=90,
                 allowed_tries=3,
             ),
-            "parser": "openrouter/deepseek/deepseek-chat-v3.1:free",
+            "parser": _OR_MODEL,
         },
     )
 
