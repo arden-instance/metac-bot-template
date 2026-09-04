@@ -1,0 +1,41 @@
+name: Forecast Calibration Backtest
+
+# Manual-only. Runs the production LLM config against a set of resolved binary
+# questions (Manifold-sourced) and scores calibration vs outcome and vs market.
+# Uses the existing OPENROUTER_API_KEY Actions secret so no local key is needed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max questions to run (free-tier ~50/day, shared with prod bot)"
+        required: false
+        default: "45"
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run backtest
+        run: |
+          cd backtest
+          python run_backtest.py questions_bt.jsonl "${{ github.event.inputs.limit }}"
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-results
+          path: |
+            backtest/results.jsonl
+            backtest/summary.json
