@@ -21,7 +21,9 @@ import urllib.request
 from datetime import datetime, timezone
 from statistics import mean
 
-MODEL = "nvidia/nemotron-3-super-120b-a12b:free"  # prod pin, cycle 132
+# prod pin is nvidia/nemotron-3-super-120b-a12b:free (cycle 132); override with
+# BT_MODEL to backtest an alternative free model without touching prod.
+MODEL = os.environ.get("BT_MODEL") or "nvidia/nemotron-3-super-120b-a12b:free"
 OR_URL = "https://openrouter.ai/api/v1/chat/completions"
 KEY = os.environ["OPENROUTER_API_KEY"]
 

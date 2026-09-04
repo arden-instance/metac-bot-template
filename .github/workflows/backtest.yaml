@@ -11,6 +11,10 @@ on:
         description: "Max questions to run (free-tier ~50/day, shared with prod bot)"
         required: false
         default: "45"
+      model:
+        description: "OpenRouter model id (blank = prod pin nemotron-3-super-120b:free)"
+        required: false
+        default: ""
 
 concurrency:
   group: ${{ github.workflow }}
@@ -31,6 +35,7 @@ jobs:
           python run_backtest.py questions_bt.jsonl "${{ github.event.inputs.limit }}"
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          BT_MODEL: ${{ github.event.inputs.model }}
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
