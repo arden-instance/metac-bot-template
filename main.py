@@ -712,19 +712,26 @@ if __name__ == "__main__":
     # piggyback on the forecasting_tools SDK constants and need updating
     # whenever those rotate seasons.
     TOURNAMENT_URLS = {
-        "tournament": "https://www.metaculus.com/tournament/summer-futureeval-2026/",
+        "tournament": "https://www.metaculus.com/tournament/fall-futureeval-2026/",
         "metaculus_cup": "https://www.metaculus.com/tournament/metaculus-cup-summer-2025/",
         "test_questions": "https://www.metaculus.com/tournament/bot-testing-area/",
     }
+
+    # The installed forecasting_tools pins CURRENT_AI_COMPETITION_ID to the
+    # Summer 2026 season (id 33022), which closed for forecasting 2026-09-06.
+    # Until the SDK ships a Fall bump, target the Fall season explicitly so the
+    # bot keeps entering the $50k seasonal pool. Falls back to the SDK constant.
+    FALL_FUTUREEVAL_2026_SLUG = "fall-futureeval-2026"  # id 33121, ends 2027-01-06
 
     # Dispatch on mode. Each branch produces a list of ForecastReport (or
     # exceptions, since return_exceptions=True) which then flows into the
     # summary printers below.
     client = MetaculusClient()
     if run_mode == "tournament":
+        seasonal_target = FALL_FUTUREEVAL_2026_SLUG or client.CURRENT_AI_COMPETITION_ID
         seasonal_tournament_reports = asyncio.run(
             template_bot.forecast_on_tournament(
-                client.CURRENT_AI_COMPETITION_ID, return_exceptions=True
+                seasonal_target, return_exceptions=True
             )
         )
         minibench_reports = asyncio.run(
