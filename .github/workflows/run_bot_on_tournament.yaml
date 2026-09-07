@@ -3,7 +3,14 @@ name: Forecast on new AI tournament questions
 on:
   workflow_dispatch:
   schedule:
-    - cron: "7,27,47 * * * *" # every 20 min, offset off the hour. Make sure to skip already-forecasted questions!
+    # 4x/day (every 6h). The OpenRouter free tier caps at ~50 model
+    # requests/day (<$10 lifetime credit); the previous every-20-min schedule
+    # (72 runs/day) burned the daily cap within the first ~1-2 runs whenever a
+    # fresh round opened, then every remaining run failed with 429 for the rest
+    # of the UTC day (see cycle 216). Already-forecasted questions are skipped,
+    # so 4 spread-out runs pick up new questions and retry the backlog after
+    # the 00:00 UTC reset without wasting Actions minutes on guaranteed 429s.
+    - cron: "23 1,7,13,19 * * *"
 
 # Add concurrency group to prevent parallel runs
 concurrency:
