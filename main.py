@@ -761,7 +761,39 @@ if __name__ == "__main__":
             )
         )
 
-    template_bot.log_report_summary(forecast_reports)
+    # Tolerate partial runs caused by the OpenRouter free-tier daily cap
+    # (50 model reqs/UTC-day on <$10 lifetime credit). MiniBench opens ~60
+    # fresh questions per round, so a single run cannot clear them all: the
+    # forecasts that completed before the cap was hit are already published,
+    # and skip_previously_forecasted_questions=True means the next scheduled
+    # run picks up the remainder. Only a genuine (non-rate-limit) failure
+    # should turn the workflow red.
+    exceptions = [r for r in forecast_reports if isinstance(r, BaseException)]
+
+    def _is_rate_limit(exc: BaseException) -> bool:
+        blob = f"{exc!r} {exc}"
+        if isinstance(exc, BaseExceptionGroup):
+            return all(_is_rate_limit(sub) for sub in exc.exceptions)
+        return "free-models-per-day" in blob or "RateLimitError" in blob
+
+    non_rate_limit = [e for e in exceptions if not _is_rate_limit(e)]
+    published = len(forecast_reports) - len(exceptions)
+
+    try:
+        template_bot.log_report_summary(forecast_reports)
+    except Exception as summary_exc:
+        if non_rate_limit or not exceptions:
+            raise
+        logging.warning(
+            "Suppressing workflow failure: %d/%d questions hit the OpenRouter "
+            "free-tier daily cap; %d forecasts published this run. The rest "
+            "will be retried by the next scheduled run. (%s)",
+            len(exceptions),
+            len(forecast_reports),
+            published,
+            summary_exc,
+        )
+
     print_run_summary_banner(
         forecast_reports,
         will_publish=publish_to_metaculus,
